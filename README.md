@@ -2,6 +2,8 @@
 
 A header-only, awaitable mutex for C++23 coroutines and standalone [Asio](https://think-async.com/Asio/) — lock-free, zero-global-heap, cancellation- and strand-aware.
 
+> 🧩 Extracted from **[fixpp](https://github.com/CatalinSerafimescu/fixpp)** — a modern, low-latency C++ FIX protocol engine built on C++23 coroutines and standalone Asio. If you like the allocation discipline and lock-free design here, that's where it comes from.
+
 ## Overview
 
 `async_mutex` is a single-header mutual-exclusion primitive for C++23 coroutines built on standalone Asio. You `co_await` the lock instead of blocking a thread:
