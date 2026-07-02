@@ -35,9 +35,9 @@ This repository is being extracted from its origin project. Landing here in orde
 
 1. The `async_mutex.hpp` header.
 2. The full test suite (the `sync_*` seams: contention, cancellation, strand-reap, layout-golden, sanitizer and stress lanes).
-3. Standalone cleanup — decoupling the internal `error` dependency, simplifying the `fixpp::sync` namespace, and generalizing the header comments.
+3. Standalone cleanup — decoupling the internal `error` dependency, renaming the namespace `fixpp::sync` → `catseraf::sync`, and generalizing the header comments.
 
-Until step 3 lands, the header still references `fixpp/core/error.hpp` and lives in `namespace fixpp::sync`.
+Until step 3 lands, the header still references `fixpp/core/error.hpp` and lives in `namespace fixpp::sync` (the target is `catseraf::sync::async_mutex`, with room for a family of coroutine sync primitives under `catseraf::sync`).
 
 ## Requirements
 
