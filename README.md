@@ -1,6 +1,13 @@
 # async_mutex
 
-A header-only, awaitable mutex for C++23 coroutines and standalone [Asio](https://think-async.com/Asio/) — lock-free, zero-global-heap, cancellation- and strand-aware.
+[![Linux](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-linux.yml)
+[![Linux libc++](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-linux-libcxx.yml/badge.svg)](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-linux-libcxx.yml)
+[![Windows](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-windows.yml)
+[![macOS](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-macos.yml/badge.svg)](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-macos.yml)
+[![Coverage](https://codecov.io/gh/CatalinSerafimescu/async_mutex/branch/main/graph/badge.svg)](https://codecov.io/gh/CatalinSerafimescu/async_mutex)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](LICENSE)
+
+A header-only, awaitable mutex for C++23 coroutines and standalone [Asio](https://think-async.com/Asio/) — lock-free, zero-global-heap, cancellation- and strand-aware. Dual-licensed: AGPL-3.0-or-later, with a [commercial license](LICENSE-COMMERCIAL.md) available.
 
 > 🧩 Extracted from **[fixpp](https://github.com/CatalinSerafimescu/fixpp)** — a modern, low-latency C++ FIX protocol engine built on C++23 coroutines and standalone Asio. If you like the allocation discipline and lock-free design here, that's where it comes from.
 
