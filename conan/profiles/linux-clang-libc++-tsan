@@ -1,0 +1,23 @@
+# Conan profile: linux-clang-libc++-tsan
+
+[settings]
+os=Linux
+arch=x86_64
+build_type=Debug
+compiler=clang
+compiler.version=22
+compiler.libcxx=libc++
+compiler.cppstd=23
+
+[buildenv]
+CC=clang-22
+CXX=clang++-22
+CXXFLAGS=-stdlib=libc++ -fsanitize=thread
+LDFLAGS=-stdlib=libc++ -fsanitize=thread
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.build:cxxflags=["-fsanitize=thread"]
+tools.build:sharedlinkflags=["-fsanitize=thread"]
+tools.build:exelinkflags=["-fsanitize=thread"]
+tools.info.package_id:confs=["tools.build:cxxflags", "tools.build:cflags", "tools.build:sharedlinkflags", "tools.build:exelinkflags"]

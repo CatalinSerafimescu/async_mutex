@@ -1,0 +1,8 @@
+# Build / CMake / Conan artifacts
+/build/
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+
+# Local Claude Code tooling / settings
+.claude

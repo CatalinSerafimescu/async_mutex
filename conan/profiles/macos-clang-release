@@ -1,0 +1,19 @@
+# Conan profile: macos-clang-release
+
+[settings]
+os=Macos
+arch=armv8
+build_type=Release
+compiler=clang
+compiler.version=22
+compiler.libcxx=libc++
+compiler.cppstd=23
+
+[buildenv]
+CC=/opt/homebrew/opt/llvm/bin/clang
+CXX=/opt/homebrew/opt/llvm/bin/clang++
+CXXFLAGS=-stdlib=libc++
+LDFLAGS=-stdlib=libc++
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja

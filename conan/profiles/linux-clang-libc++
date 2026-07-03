@@ -1,0 +1,19 @@
+# Conan profile: linux-clang-libc++
+
+[settings]
+os=Linux
+arch=x86_64
+build_type=Debug
+compiler=clang
+compiler.version=22
+compiler.libcxx=libc++
+compiler.cppstd=23
+
+[buildenv]
+CC=clang-22
+CXX=clang++-22
+CXXFLAGS=-stdlib=libc++
+LDFLAGS=-stdlib=libc++
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja

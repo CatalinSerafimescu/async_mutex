@@ -1,0 +1,23 @@
+# Conan profile: macos-clang-asan
+
+[settings]
+os=Macos
+arch=armv8
+build_type=Debug
+compiler=clang
+compiler.version=22
+compiler.libcxx=libc++
+compiler.cppstd=23
+
+[buildenv]
+CC=/opt/homebrew/opt/llvm/bin/clang
+CXX=/opt/homebrew/opt/llvm/bin/clang++
+CXXFLAGS=-stdlib=libc++ -fsanitize=address -fno-omit-frame-pointer
+LDFLAGS=-stdlib=libc++ -fsanitize=address
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.build:cxxflags=["-fsanitize=address", "-fno-omit-frame-pointer"]
+tools.build:sharedlinkflags=["-fsanitize=address"]
+tools.build:exelinkflags=["-fsanitize=address"]
+tools.info.package_id:confs=["tools.build:cxxflags", "tools.build:cflags", "tools.build:sharedlinkflags", "tools.build:exelinkflags"]

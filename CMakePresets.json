@@ -1,0 +1,221 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 28, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "_base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "ASYNC_MUTEX_BUILD_TESTS": "ON",
+        "ASYNC_MUTEX_WERROR": "OFF"
+      }
+    },
+    {
+      "name": "linux-clang-debug",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-debug/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-release",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-release/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-asan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-asan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-ubsan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-ubsan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-tsan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-tsan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-gcc-release",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "gcc-13",
+        "CMAKE_CXX_COMPILER": "g++-13",
+        "ASYNC_MUTEX_WERROR": "OFF",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-gcc-release/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-coverage",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "ASYNC_MUTEX_ENABLE_COVERAGE": "ON",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-coverage/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-libc++",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-libc++/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-libc++-asan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-libc++-asan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-libc++-ubsan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-libc++-ubsan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "linux-clang-libc++-tsan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "clang-22",
+        "CMAKE_CXX_COMPILER": "clang++-22",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/linux-clang-libc++-tsan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "windows-msvc-debug",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/windows-msvc-debug/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "windows-msvc-release",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/windows-msvc-release/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "windows-msvc-asan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/windows-msvc-asan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "macos-clang-release",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/macos-clang-release/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "macos-clang-asan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/macos-clang-asan/conan_toolchain.cmake"
+      }
+    },
+    {
+      "name": "macos-clang-ubsan",
+      "inherits": "_base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "/opt/homebrew/opt/llvm/bin/clang",
+        "CMAKE_CXX_COMPILER": "/opt/homebrew/opt/llvm/bin/clang++",
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/build/macos-clang-ubsan/conan_toolchain.cmake"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "linux-clang-debug", "configurePreset": "linux-clang-debug" },
+    { "name": "linux-clang-release", "configurePreset": "linux-clang-release" },
+    { "name": "linux-clang-asan", "configurePreset": "linux-clang-asan" },
+    { "name": "linux-clang-ubsan", "configurePreset": "linux-clang-ubsan" },
+    { "name": "linux-clang-tsan", "configurePreset": "linux-clang-tsan" },
+    { "name": "linux-gcc-release", "configurePreset": "linux-gcc-release" },
+    { "name": "linux-clang-coverage", "configurePreset": "linux-clang-coverage" },
+    { "name": "linux-clang-libc++", "configurePreset": "linux-clang-libc++" },
+    { "name": "linux-clang-libc++-asan", "configurePreset": "linux-clang-libc++-asan" },
+    { "name": "linux-clang-libc++-ubsan", "configurePreset": "linux-clang-libc++-ubsan" },
+    { "name": "linux-clang-libc++-tsan", "configurePreset": "linux-clang-libc++-tsan" },
+    { "name": "windows-msvc-debug", "configurePreset": "windows-msvc-debug" },
+    { "name": "windows-msvc-release", "configurePreset": "windows-msvc-release" },
+    { "name": "windows-msvc-asan", "configurePreset": "windows-msvc-asan" },
+    { "name": "macos-clang-release", "configurePreset": "macos-clang-release" },
+    { "name": "macos-clang-asan", "configurePreset": "macos-clang-asan" },
+    { "name": "macos-clang-ubsan", "configurePreset": "macos-clang-ubsan" }
+  ],
+  "testPresets": [
+    { "name": "linux-clang-debug", "configurePreset": "linux-clang-debug", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-release", "configurePreset": "linux-clang-release", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-asan", "configurePreset": "linux-clang-asan", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-ubsan", "configurePreset": "linux-clang-ubsan", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-tsan", "configurePreset": "linux-clang-tsan", "output": { "outputOnFailure": true } },
+    { "name": "linux-gcc-release", "configurePreset": "linux-gcc-release", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-coverage", "configurePreset": "linux-clang-coverage", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-libc++", "configurePreset": "linux-clang-libc++", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-libc++-asan", "configurePreset": "linux-clang-libc++-asan", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-libc++-ubsan", "configurePreset": "linux-clang-libc++-ubsan", "output": { "outputOnFailure": true } },
+    { "name": "linux-clang-libc++-tsan", "configurePreset": "linux-clang-libc++-tsan", "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc-debug", "configurePreset": "windows-msvc-debug", "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc-release", "configurePreset": "windows-msvc-release", "output": { "outputOnFailure": true } },
+    { "name": "windows-msvc-asan", "configurePreset": "windows-msvc-asan", "output": { "outputOnFailure": true } },
+    { "name": "macos-clang-release", "configurePreset": "macos-clang-release", "output": { "outputOnFailure": true } },
+    { "name": "macos-clang-asan", "configurePreset": "macos-clang-asan", "output": { "outputOnFailure": true } },
+    { "name": "macos-clang-ubsan", "configurePreset": "macos-clang-ubsan", "output": { "outputOnFailure": true } }
+  ]
+}

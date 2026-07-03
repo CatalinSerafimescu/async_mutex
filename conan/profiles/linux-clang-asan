@@ -1,0 +1,23 @@
+# Conan profile: linux-clang-asan
+
+[settings]
+os=Linux
+arch=x86_64
+build_type=Debug
+compiler=clang
+compiler.version=22
+compiler.libcxx=libstdc++11
+compiler.cppstd=23
+
+[buildenv]
+CC=clang-22
+CXX=clang++-22
+CXXFLAGS=-fsanitize=address -fno-omit-frame-pointer
+LDFLAGS=-fsanitize=address
+
+[conf]
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.build:cxxflags=["-fsanitize=address", "-fno-omit-frame-pointer"]
+tools.build:sharedlinkflags=["-fsanitize=address"]
+tools.build:exelinkflags=["-fsanitize=address"]
+tools.info.package_id:confs=["tools.build:cxxflags", "tools.build:cflags", "tools.build:sharedlinkflags", "tools.build:exelinkflags"]
