@@ -123,6 +123,7 @@ if(NOT WIN32)
     COMMAND bash "${SYNC_GREP_GATE_SCRIPT}"
       -I "${CMAKE_SOURCE_DIR}/include"
       -I "$<TARGET_PROPERTY:asio::asio,INTERFACE_INCLUDE_DIRECTORIES>"
+      --require-awaitable-marker
       --
       "${CMAKE_SOURCE_DIR}/include/catseraf/sync/async_mutex.hpp"
   )

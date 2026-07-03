@@ -26,6 +26,12 @@ target_include_directories(catseraf_async_mutex
 )
 target_link_libraries(catseraf_async_mutex INTERFACE asio::asio)
 
+# Export under the short name so the INSTALLED target matches the in-tree ALIAS:
+# with NAMESPACE catseraf:: the export would otherwise be
+# catseraf::catseraf_async_mutex, breaking find_package consumers that link the
+# advertised catseraf::async_mutex.
+set_target_properties(catseraf_async_mutex PROPERTIES EXPORT_NAME async_mutex)
+
 install(
   DIRECTORY include/
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
