@@ -48,6 +48,43 @@ The full `sync_*` test matrix (46 tests) — uncontended/contended latency, FIFO
 - A C++23 compiler (`<coroutine>`, `<expected>`, `<memory_resource>`).
 - Standalone Asio (developed against `asio/1.38.0`); Boost is **not** required.
 
+## Consuming this library
+
+Header-only — link the `catseraf::async_mutex` target, then `#include "catseraf/sync/async_mutex.hpp"`. You supply [standalone Asio](https://think-async.com/Asio/) yourself (Conan / vcpkg / `find_package` / FetchContent); the exported package config declares it via `find_dependency(asio)`. Pick whichever integration you use:
+
+**FetchContent**
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(async_mutex
+  GIT_REPOSITORY https://github.com/CatalinSerafimescu/async_mutex.git
+  GIT_TAG main)                       # or a released tag
+FetchContent_MakeAvailable(async_mutex)
+
+target_link_libraries(your_app PRIVATE catseraf::async_mutex)
+```
+
+**Install + `find_package`**
+
+```bash
+cmake -S . -B build
+cmake --install build --prefix /path/to/prefix
+```
+
+```cmake
+find_package(catseraf-async-mutex CONFIG REQUIRED)   # declares find_dependency(asio)
+target_link_libraries(your_app PRIVATE catseraf::async_mutex)
+```
+
+**`add_subdirectory`** (vendored copy)
+
+```cmake
+add_subdirectory(external/async_mutex)
+target_link_libraries(your_app PRIVATE catseraf::async_mutex)
+```
+
+When consumed via FetchContent / `add_subdirectory`, this project's tests and install rules are off by default (they enable only when async_mutex is the top-level project; force install with `-DASYNC_MUTEX_INSTALL=ON`). Conan Center packaging is planned.
+
 ## License
 
 Dual-licensed:
