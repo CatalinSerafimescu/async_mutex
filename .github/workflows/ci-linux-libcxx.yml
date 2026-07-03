@@ -17,6 +17,9 @@ jobs:
   libcxx:
     name: "${{ matrix.preset }}"
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read   # pull the instrumented-libc++ image from ghcr (TSan leg)
     strategy:
       fail-fast: false
       matrix:
@@ -91,5 +94,38 @@ jobs:
       - name: Build
         run: cmake --build --preset ${{ matrix.preset }}
 
+      # TSan only: the apt-installed libc++ is NOT TSan-instrumented, so TSan
+      # cannot see libc++'s internal synchronisation and reports FALSE data
+      # races in std::future / asio::use_future shared-state teardown (proven
+      # instrumentation artifact — see docs/TSAN-LIBCXX-FALSE-POSITIVE.md;
+      # reproduce-then-disprove with an instrumented libc++ gives 0 races vs
+      # the apt libc++'s reliable trips). Pull a TSan-instrumented libc++
+      # (llvmorg-22.1.2, -DLLVM_USE_SANITIZER=Thread, ABI-identical to stock so
+      # no relink) and load it ahead of the apt one at test time via
+      # LD_LIBRARY_PATH. Ported from fixpp's tier3-libcxx.yml.
+      - name: Fetch instrumented libc++ (TSan)
+        if: matrix.preset == 'linux-clang-libc++-tsan'
+        run: |
+          # Pin by DIGEST, not the mutable :22.1.2 tag — this .so is loaded into
+          # the test process, so a silently re-pushed tag could fabricate/suppress
+          # TSan results. Digest below = the verified-good image (tag 22.1.2).
+          # To roll forward: re-push, then update this digest + the comment.
+          IMG="ghcr.io/catalinserafimescu/fixpp-libcxx-tsan@sha256:65106764ae2318bf1e982216d84b0d45ec9c9245cb25a59728aab59f016ea161"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMG"
+          cid=$(docker create "$IMG")
+          docker cp "$cid:/libcxx-tsan" "$RUNNER_TEMP/libcxx-tsan"
+          docker rm "$cid"
+          ls -l "$RUNNER_TEMP/libcxx-tsan"
+
       - name: Test
+        if: matrix.preset != 'linux-clang-libc++-tsan'
+        run: ctest --preset ${{ matrix.preset }} --output-on-failure
+
+      - name: Test (TSan — instrumented libc++)
+        if: matrix.preset == 'linux-clang-libc++-tsan'
+        env:
+          # Prepend the instrumented libc++ ahead of the apt libc++ in the
+          # job-level LD_LIBRARY_PATH so the soname resolves to it at runtime.
+          LD_LIBRARY_PATH: ${{ runner.temp }}/libcxx-tsan:${{ env.LD_LIBRARY_PATH }}
         run: ctest --preset ${{ matrix.preset }} --output-on-failure

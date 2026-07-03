@@ -1,91 +1,82 @@
-# Known flake — libc++ TSAN heap-reuse false positive on the seam ABA tests
+# libc++ TSAN false positives — and the instrumented-libc++ fix
 
-This document records a **known, intermittent ThreadSanitizer false positive** that
-affects three tests **only under the libc++ TSAN lane** (`linux-clang-libc++-tsan`).
-It is persisted here so that a future failure of this exact shape is recognized as a
-toolchain artifact — **not** a data race in `async_mutex` — and is not "fixed" by
-rewriting the tests' synchronization. No code, test, or CI change was made in
-response to it (deliberate — see *Decision* below).
+The `linux-clang-libc++-tsan` CI lane used to intermittently report
+`ThreadSanitizer: data race ... in operator delete` on three tests. This is a
+**known false positive caused by an uninstrumented libc++**, not a data race in
+`async_mutex`. It is **fixed** in CI by loading a TSAN-instrumented libc++ at test
+time (see *Fix* below). This document records the root cause and the fix so a future
+recurrence — or a change to that CI step — is understood.
+
+## Root cause
+
+The lane compiles our code (and gtest) with `-fsanitize=thread`, but links the
+**stock `libc++-22` shared library from apt.llvm.org, which is _not_ TSAN-instrumented**.
+TSAN therefore cannot observe the synchronization that happens *inside* `libc++.so`
+— in particular the release/acquire edges of `std::future`/`std::promise`
+shared-state teardown and `std::mutex` internals. When a cross-thread teardown
+frees a `use_future` `std::promise<void>` shared state on a worker thread, TSAN
+sees the intercepted `operator delete` but not the libc++-internal edge that
+ordered it, and reports a phantom race against an unrelated, earlier access at the
+same (recycled) heap address. This is a documented limitation of TSAN with an
+uninstrumented standard library; LLVM's own guidance is to build an instrumented
+libc++ for TSAN.
+
+Corroborating evidence:
+
+- **The "conflicting" accesses are unrelated objects.** The write is asio freeing
+  the `use_future` promise state on the worker thread; the "previous read" stack is
+  **gtest's own framework `std::mutex::lock()`** inside `testing::Test::Run()`
+  (`gtest.cc:2664`) — both frames resolve inside the uninstrumented `libc++.so.1`.
+  The race addresses are low `0x7220000000XX` (TSAN's heap) and differ per test
+  (`…218`, `…018`).
+- **libc++-only.** The identical commit passes `linux-clang-tsan` (libstdc++), whose
+  `<future>` is header-inline and therefore fully instrumented. A genuine race in
+  the header would fire under both standard libraries.
+- **Independent of the mutex code.** It first surfaced on a docs-only commit while
+  the prior commit passed; the header is byte-identical across them. The gtest
+  bodies pass (`[ PASSED ]`) — only TSAN's nonzero exit fails ctest.
+- **Not reproducible on an instrumented libc++.** Reproduce-then-disprove: the apt
+  libc++ trips reliably in CI, an instrumented libc++ gives **0 races**.
+
+This is the same artifact the origin project (fixpp) diagnosed and fixed in its
+`tier3-libcxx.yml`; the affected tests and toolchain were ported from there.
 
 ## Affected tests
 
-All three are `CATSERAF_ASYNC_MUTEX_TEST_SEAM` tests that deliberately provoke
-ABA / CAS-loss interleavings by running a second `io_context` on a background
-`std::thread` and coordinating via `asio::co_spawn(..., asio::use_future)`:
+`CATSERAF_ASYNC_MUTEX_TEST_SEAM` tests that run a second `io_context` on a
+background `std::thread` and coordinate via `asio::co_spawn(..., asio::use_future)`:
 
 - `sync_async_mutex_aba_interleave` (`AsyncMutexAbaInterleave.PopPreCasAbaCorruptionDetected`)
 - `sync_async_mutex_terminal_cas_recursive_unlock` (`...F6FifoExhaustedTerminalCasFailGrantsWaiter`)
 - `sync_async_mutex_chain_walk_cas_loss` (`...ResidualWalkCancelWinsGrantCasLoss`)
 
-## Symptom
+## Fix
 
-Under `linux-clang-libc++-tsan`, occasionally:
+`.github/workflows/ci-linux-libcxx.yml`, TSan leg only:
 
-```
-WARNING: ThreadSanitizer: data race
-  Write of size 8 at 0x7220000000XX by thread T3:
-    #0 operator delete(void*, unsigned long)
-    ...
-    #4 std::promise<void>::~promise()
-    #11 asio::detail::promise_executor<...>::~promise_executor()   use_future.hpp:108
-    #13 asio::detail::co_spawn_state<...>::~co_spawn_state()       co_spawn.hpp:76
-    ...  (asio use_future teardown on the worker thread)
-  Previous atomic read of size 1 at 0x7220000000XX by main thread:
-    #0 pthread_mutex_lock
-    #1 std::__1::mutex::lock()
-    #2 testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,...>  gtest.cc:2664
-    #4 testing::Test::Run()
-    ...  #12 main
-SUMMARY: ThreadSanitizer: data race ... in operator delete(void*, unsigned long)
-```
+1. **Fetch a TSAN-instrumented libc++** — built from `llvmorg-22.1.2` with
+   `-DLLVM_USE_SANITIZER=Thread` (ABI-identical to stock, so no relink), pulled
+   from the public, **digest-pinned** image
+   `ghcr.io/catalinserafimescu/fixpp-libcxx-tsan@sha256:65106764…` and `docker cp`'d
+   out. It is pinned by digest, not the mutable `:22.1.2` tag, because the `.so` is
+   loaded into the test process — a re-pushed tag could fabricate or suppress TSAN
+   results.
+2. **Load it ahead of the apt libc++** by prepending its directory to
+   `LD_LIBRARY_PATH` in the TSan `Test` step, so the `libc++.so.1` soname resolves
+   to the instrumented copy at runtime.
 
-The gtest test body itself **passes** — `[ OK ]` / `[ PASSED ]` are printed. What
-fails the lane is TSAN's warning plus its nonzero exit code, which `ctest` surfaces
-as a failed test.
+Beyond killing the flake, this closes a real blind spot: without it, the lane
+cannot see genuine races synchronized through `libc++.so` internals.
 
-## Why it is a false positive (not an `async_mutex` race)
+## Re-triage
 
-1. **The two "conflicting" accesses are unrelated objects at a recycled address.**
-   The write is asio freeing the `use_future` `std::promise<void>` shared state
-   (`__assoc_sub_state`) on the worker thread during `co_spawn` teardown. The
-   "previous read" stack is **gtest's own framework `std::mutex`**
-   (`std::mutex::lock()` inside `testing::Test::Run()` — `gtest.cc:2664`), not the
-   test's data and not `future::get()`. The gtest mutex was freed earlier and the
-   promise state was later allocated at the same heap address; TSAN's stale shadow
-   across that alloc-reuse boundary flags a race between two objects that never
-   coexisted. Note the address is a low `0x7220000000XX` value from TSAN's own heap
-   region, and it **differs per test** (`…218`, `…018`), consistent with allocator
-   reuse rather than a fixed shared datum.
+If the TSan leg reports a race:
 
-2. **libc++-only.** The identical commit passes `linux-clang-tsan` (libstdc++) —
-   e.g. commit `ab43884` failed `linux-clang-libc++-tsan` but its `linux-clang-tsan`
-   run was green. A genuine race in the header would fire under both standard
-   libraries.
-
-3. **Flaky, and independent of the mutex code.** It first surfaced on a
-   **docs-only** commit (`ab43884`, a README edit) while the immediately preceding
-   commit (`830ee2e`) passed the same lane. The `async_mutex.hpp` header is
-   byte-identical across those commits.
-
-4. **Not locally reproducible.** ~540 runs of the three tests under the local
-   `linux-clang-libc++-tsan` build (serial, and concurrently under memory/scheduler
-   pressure) produced zero warnings.
-
-## Decision
-
-**Do nothing in the code / tests / CI.** These tests retain full ThreadSanitizer
-coverage via the `linux-clang-tsan` (libstdc++) lane, which is reliably green, plus
-ASAN/UBSAN and the non-sanitized lanes. Options considered and declined:
-
-- *Exclude the three tests from the libc++-TSAN lane* — loses libc++-flavored TSAN
-  on exactly these teardown paths for a false positive.
-- *TSAN suppressions file* (e.g. `race:asio::detail::promise_executor::~promise_executor`)
-  — can mask a genuine future regression in that path and cannot be validated
-  locally (the artifact won't reproduce).
-- *`ctest --repeat until-pass:2`* — blanket-masks flakiness beyond this artifact.
-
-If the libc++-TSAN lane trips on one of these three tests with the stack signature
-above (asio `use_future` teardown vs. a gtest-framework `std::mutex::lock`),
-re-run the lane; it is this artifact. Only investigate as a real race if the
-conflicting accesses name the same `async_mutex` / `waiter_record` object, or if the
-`linux-clang-tsan` (libstdc++) lane also fails.
+- If the two conflicting accesses resolve inside `libc++.so.1` (e.g. `std::mutex::lock`
+  / `std::promise::~promise` / `operator delete` in `use_future` teardown) and the
+  instrumented-libc++ step was skipped or the image failed to load, it is this
+  artifact — check that `Fetch instrumented libc++ (TSan)` ran and
+  `LD_LIBRARY_PATH` points at it.
+- Treat it as a **real** race only if the conflicting accesses name the same
+  `async_mutex` / `waiter_record` object, or if the `linux-clang-tsan` (libstdc++)
+  lane also fails.
