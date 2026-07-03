@@ -25,9 +25,9 @@ jobs:
           - windows-msvc-asan
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -41,17 +41,20 @@ jobs:
         run: conan profile detect --force
 
       - name: Cache Conan packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: C:\Users\runneradmin\.conan2\p
           key: conan-win-${{ matrix.preset }}-${{ hashFiles('conanfile.py', format('conan/profiles/{0}', matrix.preset)) }}
           restore-keys: |
             conan-win-${{ matrix.preset }}-
 
-      # ilammy/msvc-dev-cmd runs vcvars and exports the MSVC dev environment
-      # (cl.exe on PATH) into the job for the remaining steps.
+      # vs-shell activates the full MSVC dev environment (cl.exe + vcvars) and
+      # exports it via GITHUB_ENV so it persists into the later steps. It is a
+      # composite (pure-PowerShell) action — no Node runtime — so it avoids the
+      # Node-20-deprecation warning that node20-based ilammy/msvc-dev-cmd emits
+      # (that action has no Node-24 release).
       - name: Set up MSVC environment (vcvars)
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: egor-tensin/vs-shell@v2
 
       - name: Conan install
         run: conan install . -pr:h conan/profiles/${{ matrix.preset }} -pr:b conan/profiles/${{ matrix.preset }} -of build/${{ matrix.preset }} -b missing

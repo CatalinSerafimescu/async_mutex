@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Clang 22 (apt.llvm.org) + Ninja
         run: |
@@ -57,7 +57,7 @@ jobs:
           EOF
 
       - name: Cache Conan packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.conan2/p
           key: conan-linux-clang-coverage-${{ hashFiles('conanfile.py', 'conan/profiles/linux-clang-coverage') }}
@@ -155,13 +155,13 @@ jobs:
             > build/linux-clang-coverage/coverage.lcov
 
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-lcov
           path: build/linux-clang-coverage/coverage.lcov
 
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: build/linux-clang-coverage/coverage.lcov
