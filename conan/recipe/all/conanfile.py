@@ -1,9 +1,11 @@
 import os
 
 from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
 from conan.tools.build import check_min_cppstd
 from conan.tools.files import copy, get
 from conan.tools.layout import basic_layout
+from conan.tools.scm import Version
 
 required_conan_version = ">=2.1"
 
@@ -26,6 +28,18 @@ class AsyncMutexConan(ConanFile):
     def _min_cppstd(self):
         return 23
 
+    @property
+    def _compilers_minimum_version(self):
+        # Best-effort C++23 floors (std::expected + coroutines). Only clang 22 /
+        # gcc 13 / MSVC 2022 / Homebrew-LLVM are actually exercised in CI; CCI
+        # reviewers may tune these. apple-clang is intentionally absent — the
+        # header needs libc++'s <expected>, which AppleClang lags on.
+        return {
+            "gcc": "13",
+            "clang": "17",
+            "msvc": "193",
+        }
+
     def layout(self):
         basic_layout(self, src_folder="src")
 
@@ -39,6 +53,13 @@ class AsyncMutexConan(ConanFile):
 
     def validate(self):
         check_min_cppstd(self, self._min_cppstd)
+        minimum = self._compilers_minimum_version.get(str(self.settings.compiler))
+        if minimum and Version(self.settings.compiler.version) < minimum:
+            raise ConanInvalidConfiguration(
+                f"{self.ref} requires C++{self._min_cppstd}, which needs "
+                f"{self.settings.compiler} >= {minimum} "
+                f"(have {self.settings.compiler.version})."
+            )
 
     def source(self):
         get(self, **self.conan_data["sources"][self.version], strip_root=True)
