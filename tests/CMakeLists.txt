@@ -113,10 +113,13 @@ target_compile_definitions(sync_async_mutex_mt_hammer_seam PRIVATE CATSERAF_ASYN
 set_tests_properties(sync_async_mutex_mt_hammer_seam PROPERTIES TIMEOUT 300)
 
 if(NOT WIN32)
+  # CXX=${CMAKE_CXX_COMPILER}: the gate must preprocess with the project's build
+  # compiler, not PATH `clang++` (AppleClang on macOS rejects -std=c++23). Passed
+  # via the test environment; the script honors $CXX and std::system() inherits it.
   add_sync_test(sync_no_std_mutex_ci_gate test_no_std_mutex_ci_gate.cpp)
   set_tests_properties(sync_no_std_mutex_ci_gate PROPERTIES
     ENVIRONMENT
-      "SYNC_GREP_GATE_SCRIPT=${SYNC_GREP_GATE_SCRIPT};SYNC_FIXTURES_DIR=${SYNC_FIXTURES_DIR};SYNC_GATE_INC=${CMAKE_SOURCE_DIR}/include;SYNC_ASIO_INC=$<TARGET_PROPERTY:asio::asio,INTERFACE_INCLUDE_DIRECTORIES>"
+      "CXX=${CMAKE_CXX_COMPILER};SYNC_GREP_GATE_SCRIPT=${SYNC_GREP_GATE_SCRIPT};SYNC_FIXTURES_DIR=${SYNC_FIXTURES_DIR};SYNC_GATE_INC=${CMAKE_SOURCE_DIR}/include;SYNC_ASIO_INC=$<TARGET_PROPERTY:asio::asio,INTERFACE_INCLUDE_DIRECTORIES>"
   )
 
   add_test(NAME check_no_std_mutex_corpus
@@ -127,4 +130,6 @@ if(NOT WIN32)
       --
       "${CMAKE_SOURCE_DIR}/include/catseraf/sync/async_mutex.hpp"
   )
+  set_tests_properties(check_no_std_mutex_corpus PROPERTIES
+    ENVIRONMENT "CXX=${CMAKE_CXX_COMPILER}")
 endif()

@@ -97,12 +97,18 @@ if [[ ${#HEADERS[@]} -eq 0 ]]; then
 fi
 
 # ─── Detect a C++ compiler ────────────────────────────────────────────────────
-if command -v clang++ &>/dev/null; then
+# Honor a caller-provided $CXX first (the project's build compiler; the CTest
+# harness passes CMAKE_CXX_COMPILER). This matters on macOS, where the PATH
+# `clang++` is AppleClang — which rejects `-std=c++23` — while the build uses a
+# c++23-capable Homebrew LLVM clang.
+if [[ -n "${CXX:-}" ]] && command -v "$CXX" &>/dev/null; then
+    :
+elif command -v clang++ &>/dev/null; then
     CXX=clang++
 elif command -v g++ &>/dev/null; then
     CXX=g++
 else
-    echo "check_no_std_mutex_in_awaitable_headers: ERROR: no C++ compiler found (tried clang++, g++)." >&2
+    echo "check_no_std_mutex_in_awaitable_headers: ERROR: no C++ compiler found (tried \$CXX, clang++, g++)." >&2
     exit 2
 fi
 
