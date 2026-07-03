@@ -50,7 +50,7 @@ Its *only* non-std / non-Asio include is `#include "fixpp/core/error.hpp"`.
 
 **Source:** `tests/sync/`. Bring the **async_mutex** tests; consciously scope out the unrelated ones.
 
-- [ ] **In scope (async_mutex):** the `sync_*` seams —
+- [x] **In scope (async_mutex):** the `sync_*` seams —
       uncontended/contended latency, fifo_fairness, contention_stress, executor_compat,
       dispatch_vs_post, cross_strand_acquire, guard_destructive_move, unlock_reaper_splice,
       result_write_race, cancellation_mid_wait, race_cancel_pre_drain, race_multi_cancel,
@@ -60,21 +60,21 @@ Its *only* non-std / non-Asio include is `#include "fixpp/core/error.hpp"`.
       drain_strand_local_reap, drain_immediate_destroy, drain_reentrant_during_active,
       drain_onstrand_cancel, drain_predrain_holder, async_mutex_layout_golden, arm64_weak_memory,
       consumer_contract_compile, no_std_mutex_ci_gate. Plus `sync_test_support.hpp` + `fixtures/`.
-- [ ] **Out of scope (confirmed, not a dependency):** `test_atomic_shared_ptr_primitive.cpp` /
+- [x] **Out of scope (confirmed, not a dependency):** `test_atomic_shared_ptr_primitive.cpp` /
       `test_atomic_shared_ptr_concurrency.cpp` test the **046 `atomic_shared_ptr` primitive**.
       Verified: `async_mutex.hpp` uses **zero `shared_ptr`** — `atomic_shared_ptr` is NOT a
       dependency and is **not needed even for libc++** builds of async_mutex (the libc++ fallback
       matters only for fixpp's `session`/`engine`/`tls`/`transport`, which hold `atomic<shared_ptr>`).
       **Leave `atomic_shared_ptr` + its tests in fixpp.** It's a clean standalone lift on its own
       merits if you later want it as `catseraf::sync` family member #2 — independent of this package.
-- [ ] Audit every ported test's `#include`s for residual fixpp coupling (error codes, core helpers,
+- [x] Audit every ported test's `#include`s for residual fixpp coupling (error codes, core helpers,
       the layout-golden's `sizeof` constants) and rewire to the new namespace / error type.
-- [ ] Port the `add_sync_test()` registration from `tests/sync/CMakeLists.txt` into a standalone
+- [x] Port the `add_sync_test()` registration from `tests/sync/CMakeLists.txt` into a standalone
       `tests/CMakeLists.txt`. **Drop the ctest LABELS** (sanitizer/stress/death groupings) — this
       suite is small and every CI lane runs the full `ctest`, so no label filtering is needed.
-- [ ] **GoogleTest** via Conan, pinned at **`gtest/1.17.0`** (mirrors the origin's pin; static —
+- [x] **GoogleTest** via Conan, pinned at **`gtest/1.17.0`** (mirrors the origin's pin; static —
       `gtest*:shared=False`). Settled — not FetchContent.
-- [ ] **Acceptance:** `ctest` green locally on the primary toolchain; layout-golden `sizeof`
+- [x] **Acceptance:** `ctest` green locally on the primary toolchain; layout-golden `sizeof`
       asserts pass unchanged (they guard the 256 B slot / ≤96 B awaiter invariants).
 
 ---
@@ -88,17 +88,17 @@ build/test loop is identical to fixpp's:
 `conan install . -pr conan/profiles/<preset> -of build/<preset>` → `cmake --preset <preset>` →
 `cmake --build --preset <preset>` → `ctest --preset <preset>`.
 
-- [ ] Root `CMakeLists.txt`: `INTERFACE` target `catseraf::async_mutex`, `cxx_std_23`,
+- [x] Root `CMakeLists.txt`: `INTERFACE` target `catseraf::async_mutex`, `cxx_std_23`,
       install + export set for `find_package(catseraf-async-mutex)`.
-- [ ] `option(ASYNC_MUTEX_BUILD_TESTS)` (default ON when top-level, OFF when consumed);
+- [x] `option(ASYNC_MUTEX_BUILD_TESTS)` (default ON when top-level, OFF when consumed);
       Werror on (mirrors fixpp's `_base` preset `FIXPP_WERROR=ON`).
-- [ ] **`conanfile.py`** — a *consumer* recipe modelled on fixpp's (Conan 2):
+- [x] **`conanfile.py`** — a *consumer* recipe modelled on fixpp's (Conan 2):
       `settings = "os", "compiler", "build_type", "arch"`;
       `generators = "CMakeToolchain", "CMakeDeps"`;
       `requires = ["asio/1.38.0", "gtest/1.17.0"]`;
       `default_options = {"gtest*:shared": False}`. Asio is **not** bundled — pulled via `CMakeDeps`.
       (Origin's openssl / otel / pugixml / crc32c / tomlplusplus etc. are all out of scope here.)
-- [ ] **Conan profiles** under `conan/profiles/` — copy the origin's async_mutex-relevant set,
+- [x] **Conan profiles** under `conan/profiles/` — copy the origin's async_mutex-relevant set,
       trimmed: `linux-clang-{debug,release,asan,ubsan,tsan}`, `linux-gcc-release`,
       `linux-clang-coverage`, `linux-clang-libc++{,-asan,-ubsan,-tsan}`,
       `windows-msvc-{debug,release,asan}`, plus a **net-new** `macos-clang-{release,asan,ubsan}`
@@ -110,7 +110,7 @@ build/test loop is identical to fixpp's:
       `sharedlinkflags`/`exelinkflags`), plus `tools.info.package_id:confs=[...]` so each sanitizer
       profile gets a **distinct Conan cache entry** (else asan/ubsan/tsan share a `package_id` and
       poison each other's link step with the wrong sanitizer runtime).
-- [ ] **`CMakePresets.json`** — one configure preset per profile (name-matched), all inheriting a
+- [x] **`CMakePresets.json`** — one configure preset per profile (name-matched), all inheriting a
       `_base` (Ninja; `binaryDir=${sourceDir}/build/${presetName}`; `CMAKE_EXPORT_COMPILE_COMMANDS`;
       tests + Werror on). Each sets `CMAKE_BUILD_TYPE`, `CMAKE_C/CXX_COMPILER`, and
       `CMAKE_TOOLCHAIN_FILE=${sourceDir}/build/${presetName}/conan_toolchain.cmake` (written by the
@@ -130,16 +130,20 @@ origin's exact flow: install Clang 22 (apt.llvm.org `llvm.sh`) / GCC 13 / libc++
 `conan profile detect` + teach Conan about Clang 22 → `conan install . -pr conan/profiles/<preset>
 -of build/<preset>` → `cmake --preset` → `cmake --build --preset` → `ctest --preset`.
 
-- [ ] `ci-linux.yml` (≙ **tier1**) — `ubuntu-24.04`, Clang 22 + GCC 13. Preset matrix:
+- [x] `ci-linux.yml` (≙ **tier1**) — `ubuntu-24.04`, Clang 22 + GCC 13. Preset matrix:
       `linux-clang-{debug,release,asan,ubsan,tsan}` + `linux-gcc-release`.
-- [ ] `ci-linux-libcxx.yml` (≙ **tier3-libcxx**) — `ubuntu-24.04`, Clang 22 + libc++-22. Preset
+- [x] `ci-linux-libcxx.yml` (≙ **tier3-libcxx**) — `ubuntu-24.04`, Clang 22 + libc++-22. Preset
       matrix: `linux-clang-libc++{,-asan,-ubsan,-tsan}`. (Catches libc++ `<expected>` / coroutine
       divergences early.)
-- [ ] `ci-windows.yml` (≙ **tier2**) — `windows-2022`, MSVC. Preset matrix:
+- [x] `ci-windows.yml` (≙ **tier2**) — `windows-2022`, MSVC. Preset matrix:
       `windows-msvc-{debug,release,asan}` (vcvars + Ninja; TSan N/A on MSVC).
-- [ ] `coverage.yml` — `ubuntu-24.04`, Clang 22 + `llvm-cov` (origin's `linux-clang-coverage`
-      preset): merge profiles → LCOV → upload to **Codecov**.
-- [ ] `ci-macos.yml` — `macos-14` (Apple Silicon), **Homebrew LLVM** (`brew install llvm`) — NOT
+- [x] `coverage.yml` — `ubuntu-24.04`, Clang 22 + `llvm-cov` (origin's `linux-clang-coverage`
+      preset): merge profiles → LCOV → upload to **Codecov**. **Scope the report to the header**
+      `include/catseraf/sync/async_mutex.hpp` (the only production code — header-only). Target =
+      the origin's feature-058 baseline on this exact header: **91.1% line / 72.3% branch**. Add a
+      non-brittle floor gate (fail if line < 90% or branch < 71%) so a broken/partial test port is
+      caught; echo the actual line%/branch% in the job log.
+- [x] `ci-macos.yml` — `macos-14` (Apple Silicon), **Homebrew LLVM** (`brew install llvm`) — NOT
       AppleClang, which lags on C++23 `<expected>` + coroutines. Preset matrix:
       `macos-clang-{release,asan,ubsan}` (TSan is unreliable under the macOS sanitizer runtime).
       Net-new — no origin lane to mirror; reuse the same Conan-profile-per-preset flow.
@@ -157,12 +161,12 @@ origin's exact flow: install Clang 22 (apt.llvm.org `llvm.sh`) / GCC 13 / libc++
 
 Add a badge row under the title. Targets:
 
-- [ ] **Linux** — `ci-linux.yml` status
-- [ ] **Linux libc++** — `ci-linux-libcxx.yml` status
-- [ ] **Windows** — `ci-windows.yml` status
-- [ ] **macOS** — `ci-macos.yml` status
-- [ ] **Coverage** — Codecov/Coveralls badge
-- [ ] **License** — AGPL-3.0-or-later (shields.io) + a note that a commercial license is available
+- [x] **Linux** — `ci-linux.yml` status
+- [x] **Linux libc++** — `ci-linux-libcxx.yml` status
+- [x] **Windows** — `ci-windows.yml` status
+- [x] **macOS** — `ci-macos.yml` status
+- [x] **Coverage** — Codecov/Coveralls badge
+- [x] **License** — AGPL-3.0-or-later (shields.io) + a note that a commercial license is available
 - [ ] *(later)* **Conan Center** version badge once published
 
 Format: GitHub Actions badge = `![Linux](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-linux.yml/badge.svg)`.
