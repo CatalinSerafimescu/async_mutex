@@ -43,14 +43,20 @@ using catseraf::sync::async_mutex;
 // inline waiter_record pool differently, so sizeof differs there; the compile-time
 // pin is therefore Linux/Clang/GCC-only (the runtime tests below still run on MSVC
 // and print/check the actual value so a Windows golden can be pinned once measured).
-#ifndef _MSC_VER
-static_assert(alignof(async_mutex) == 16,
-              "async_mutex alignment must be 16 (LIFO pointer alignment constraint)");
+// alignof(async_mutex) inherits the pool slot's alignas(std::max_align_t): 16 on
+// x86-64 / Linux arm64, 8 on Apple arm64 (long double is 64-bit there → max_align
+// is 8). The cross-platform invariant is that it EQUALS max_align and is >= 8 (the
+// LIFO low-bit sentinel). The exact sizeof (131120) is the x86-64 ABI reference.
+static_assert(alignof(async_mutex) == alignof(std::max_align_t),
+              "async_mutex must inherit std::max_align_t alignment (the pool slot)");
+static_assert(alignof(async_mutex) >= 8,
+              "async_mutex alignment must be >= 8 (LIFO low-bit sentinel)");
+#if !defined(_MSC_VER) && defined(__x86_64__)
 static_assert(sizeof(async_mutex) == 131120,
               "async_mutex sizeof changed — update this golden and document the reason. "
               "Pre-048 baseline: 131152. Post-048 (removes active_acquirers_count_+drain_latch_ptr_, "
               "adds in_flight_resumers_+draining_complete_): 131120.");
-#endif  // !_MSC_VER
+#endif  // x86-64 non-MSVC
 
 // Size constants.  sizeof(async_mutex)==131120 is pinned by static_assert above;
 // the runtime tests below provide the human-readable failure message.
@@ -70,8 +76,9 @@ TEST(AsyncMutexLayoutGolden, AlignmentIs16) {
     GTEST_SKIP() << "alignof(async_mutex) on MSVC = " << alignof(async_mutex)
                  << " (linux-clang golden 16 does not apply to MSVC ABI)";
 #else
-    EXPECT_EQ(alignof(async_mutex), static_cast<std::size_t>(16))
-        << "async_mutex alignment changed — update code and this test";
+    EXPECT_EQ(alignof(async_mutex), alignof(std::max_align_t))
+        << "async_mutex must inherit std::max_align_t alignment; actual "
+        << alignof(async_mutex) << " vs max_align " << alignof(std::max_align_t);
 #endif
 }
 
@@ -80,12 +87,13 @@ TEST(AsyncMutexLayoutGolden, SizeIsExact048Value) {
     // adds in_flight_resumers_ (4 B) + draining_complete_ (1 B, padded to 4 B).
     // Net reduction: 32 bytes (131152 → 131120).
     // Stable across debug/release/ASan/TSan (verified 2026-06-22).
-#ifdef _MSC_VER
-    // MSVC has a different std::atomic / pool packing; the 131120 golden is the
-    // Linux-clang ABI reference. Surface the actual MSVC value so it can be pinned
-    // once measured, rather than asserting the Linux number on a different ABI.
-    GTEST_SKIP() << "sizeof(async_mutex) on MSVC = " << sizeof(async_mutex)
-                 << " (linux-clang golden " << k048Expected << " does not apply to MSVC ABI)";
+#if defined(_MSC_VER) || !defined(__x86_64__)
+    // The exact 131120 golden is the x86-64 ABI reference. MSVC (different atomic/
+    // pool packing) and non-x86-64 ABIs (e.g. Apple arm64, where max_align is 8)
+    // legitimately differ — surface the actual value rather than asserting the
+    // x86-64 number on a different ABI.
+    GTEST_SKIP() << "sizeof(async_mutex) = " << sizeof(async_mutex)
+                 << " (exact golden " << k048Expected << " is the x86-64 ABI reference)";
 #else
     EXPECT_EQ(sizeof(async_mutex), k048Expected)
         << "sizeof(async_mutex) changed from expected post-048 value " << k048Expected
