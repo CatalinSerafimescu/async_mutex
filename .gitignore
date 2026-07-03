@@ -6,3 +6,6 @@ CMakeFiles/
 
 # Local Claude Code tooling / settings
 .claude
+
+# Local planning doc — not part of the published package
+EXTRACTION-PLAN.md
