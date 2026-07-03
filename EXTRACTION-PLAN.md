@@ -101,7 +101,9 @@ build/test loop is identical to fixpp's:
 - [ ] **Conan profiles** under `conan/profiles/` — copy the origin's async_mutex-relevant set,
       trimmed: `linux-clang-{debug,release,asan,ubsan,tsan}`, `linux-gcc-release`,
       `linux-clang-coverage`, `linux-clang-libc++{,-asan,-ubsan,-tsan}`,
-      `windows-msvc-{debug,release,asan}`. Each pins the exact toolchain and `compiler.cppstd=23`
+      `windows-msvc-{debug,release,asan}`, plus a **net-new** `macos-clang-{release,asan,ubsan}`
+      set (no origin equivalent — Homebrew LLVM `clang++`, `compiler.libcxx=libc++`). Each pins the
+      exact toolchain and `compiler.cppstd=23`
       (`compiler=clang`/`version=22` + `libcxx=libstdc++11` or `libc++`; or `gcc`/`13`),
       `[buildenv] CC/CXX`, and `[conf] ...cmaketoolchain:generator=Ninja`. Sanitizer flags live
       **inside the profile** (`[buildenv] CXXFLAGS/LDFLAGS` + `[conf] tools.build:cxxflags`/
@@ -137,14 +139,17 @@ origin's exact flow: install Clang 22 (apt.llvm.org `llvm.sh`) / GCC 13 / libc++
       `windows-msvc-{debug,release,asan}` (vcvars + Ninja; TSan N/A on MSVC).
 - [ ] `coverage.yml` — `ubuntu-24.04`, Clang 22 + `llvm-cov` (origin's `linux-clang-coverage`
       preset): merge profiles → LCOV → upload to **Codecov**.
-- [ ] *(optional — the origin ships **no** macOS lane)* `ci-macos.yml`. Deferred by default; see
-      Decisions #2.
+- [ ] `ci-macos.yml` — `macos-14` (Apple Silicon), **Homebrew LLVM** (`brew install llvm`) — NOT
+      AppleClang, which lags on C++23 `<expected>` + coroutines. Preset matrix:
+      `macos-clang-{release,asan,ubsan}` (TSan is unreliable under the macOS sanitizer runtime).
+      Net-new — no origin lane to mirror; reuse the same Conan-profile-per-preset flow.
 
-> **C++23 toolchain spike — RESOLVED by reuse, no spike needed.** These exact toolchains already
-> build async_mutex **green in fixpp CI**: Clang 22, GCC 13, MSVC 2022, libc++-22, `cppstd=23`,
-> `asio/1.38.0`, `gtest/1.17.0`. Pin those versions directly. The only unresolved risk is the
-> **AppleClang** "weakest link" — and it resurfaces *only* if the optional macOS lane is added
-> (Decisions #2); Linux/Windows carry zero C++23-maturity risk at these pins.
+> **C++23 toolchain spike — RESOLVED by reuse.** The Linux/Windows toolchains already build
+> async_mutex **green in fixpp CI**: Clang 22, GCC 13, MSVC 2022, libc++-22, `cppstd=23`,
+> `asio/1.38.0`, `gtest/1.17.0`. Pin those versions directly — zero C++23-maturity risk there.
+> **macOS is the one net-new lane** (no fixpp precedent): use **Homebrew LLVM**, which sidesteps
+> AppleClang's `<expected>`/coroutine gap. Validate the Homebrew LLVM version's C++23 support on
+> first CI run and pin it (the `brew install llvm` clang is well ahead of AppleClang).
 
 ---
 
@@ -155,7 +160,7 @@ Add a badge row under the title. Targets:
 - [ ] **Linux** — `ci-linux.yml` status
 - [ ] **Linux libc++** — `ci-linux-libcxx.yml` status
 - [ ] **Windows** — `ci-windows.yml` status
-- [ ] *(optional)* **macOS** — `ci-macos.yml` status (only if the macOS lane is added — Decisions #2)
+- [ ] **macOS** — `ci-macos.yml` status
 - [ ] **Coverage** — Codecov/Coveralls badge
 - [ ] **License** — AGPL-3.0-or-later (shields.io) + a note that a commercial license is available
 - [ ] *(later)* **Conan Center** version badge once published
@@ -197,9 +202,9 @@ Not detailed here by request; the shape:
   MSVC 2022, libc++-22, Ninja, `compiler.cppstd=23`; deps `asio/1.38.0` + `gtest/1.17.0`. Same
   Conan-profile-per-preset + `CMakePresets.json` (`conan_toolchain.cmake`) mechanism as the origin.
 - ✅ **GoogleTest source:** Conan `gtest/1.17.0` (mirrors the origin), static — NOT FetchContent.
+- ✅ **macOS lane:** included (net-new — no fixpp precedent). `macos-14` + **Homebrew LLVM**
+  (`brew install llvm` clang), `libcxx=libc++`, `cppstd=23`; release + asan/ubsan. AppleClang is
+  NOT used (C++23 `<expected>`/coroutine gap).
 
 **Open (resolve at kickoff):**
 1. **Conan Center name:** `async-mutex` vs `catseraf-async-mutex`.
-2. **macOS lane:** the origin ships **no** macOS build. Keep async_mutex Linux + Windows (tier1/2/3
-   parity), or add a macOS lane? If added, the AppleClang-vs-Homebrew-LLVM choice reopens
-   (AppleClang is the C++23 weak link → likely Homebrew LLVM). **Default: optional / deferred.**
