@@ -1,5 +1,6 @@
 # Build / CMake / Conan artifacts
 /build/
+conan/recipe/all/test_package/build/
 CMakeUserPresets.json
 CMakeCache.txt
 CMakeFiles/
