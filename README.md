@@ -36,16 +36,6 @@ It is designed for latency-sensitive, allocation-disciplined systems (it was ext
 - **Configurable handoff:** `completion_policy::{dispatch, post}` controls inline-vs-post resumption.
 - **Bounded footprint:** fixed 512-slot waiter pool; awaiter ≤ 96 B; a compile-time layout-golden static-assert guards the size invariants.
 
-## Status
-
-This repository is being extracted from its origin project. Landing here in order:
-
-1. The `async_mutex.hpp` header.
-2. The full test suite (the `sync_*` seams: contention, cancellation, strand-reap, layout-golden, sanitizer and stress lanes).
-3. Standalone cleanup — decoupling the internal `error` dependency, renaming the namespace `fixpp::sync` → `catseraf::sync`, and generalizing the header comments.
-
-Until step 3 lands, the header still references `fixpp/core/error.hpp` and lives in `namespace fixpp::sync` (the target is `catseraf::sync::async_mutex`, with room for a family of coroutine sync primitives under `catseraf::sync`).
-
 ## Requirements
 
 - A C++23 compiler (`<coroutine>`, `<expected>`, `<memory_resource>`).
