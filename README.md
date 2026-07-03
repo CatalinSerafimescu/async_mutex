@@ -5,7 +5,10 @@
 [![Windows](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-windows.yml)
 [![macOS](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-macos.yml/badge.svg)](https://github.com/CatalinSerafimescu/async_mutex/actions/workflows/ci-macos.yml)
 [![Coverage](https://codecov.io/gh/CatalinSerafimescu/async_mutex/branch/main/graph/badge.svg)](https://codecov.io/gh/CatalinSerafimescu/async_mutex)
+[![C++23](https://img.shields.io/badge/C%2B%2B-23-blue)](https://en.cppreference.com/w/cpp/23)
+
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg)](LICENSE)
+[![Commercial license available](https://img.shields.io/badge/commercial-available-blue)](LICENSE-COMMERCIAL.md)
 
 A header-only, awaitable mutex for C++23 coroutines and standalone [Asio](https://think-async.com/Asio/) — lock-free, zero-global-heap, cancellation- and strand-aware. Dual-licensed: AGPL-3.0-or-later, with a [commercial license](LICENSE-COMMERCIAL.md) available.
 
@@ -35,6 +38,10 @@ It is designed for latency-sensitive, allocation-disciplined systems (it was ext
 - **Strand-aware teardown:** `cancel_and_drain()` for deterministic single-pass quiescence before destruction.
 - **Configurable handoff:** `completion_policy::{dispatch, post}` controls inline-vs-post resumption.
 - **Bounded footprint:** fixed 512-slot waiter pool; awaiter ≤ 96 B; a compile-time layout-golden static-assert guards the size invariants.
+
+## Testing & coverage
+
+The full `sync_*` test matrix (46 tests) — uncontended/contended latency, FIFO fairness, cancellation, strand-reap/drain, PMR fallback, the layout golden, and dedicated ASan/UBSan/TSan lanes — runs on every CI platform. Header coverage is **~91% line / ~78% branch** (scoped to `async_mutex.hpp`, the only production code). The remaining uncovered lines are defensive `std::terminate()` traps (witnessed by death tests) plus a few unreachable/uninjectable arms — each carries a written waiver in [docs/COVERAGE.md](docs/COVERAGE.md), so no uncovered line is a genuine untested path.
 
 ## Requirements
 

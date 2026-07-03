@@ -27,6 +27,40 @@ seam-OFF coverage lane. Below-threshold coverage is admissible only because ever
 uncovered line/branch carries a written risk assessment and **no uncovered branch is a
 genuine untested error path**.
 
+## CI measurement (this repo)
+
+The Coverage workflow measures this repo's ported suite (Clang 22 on Ubuntu) with the
+report scoped to `async_mutex.hpp` only. Latest CI figures:
+
+| Metric   | This repo (CI)     | Origin (fixpp 058)                  |
+|----------|--------------------|-------------------------------------|
+| Line     | ~91.0% (810/890)   | 91.1%                               |
+| Branch   | ~78.0% (138/177)   | 72.3% raw (≈ 78.6% artifact-adjusted) |
+| Function | 45/47              | 27/29                               |
+
+Two reconciliations with the origin figures above:
+
+- **Branch (~78% vs the origin's raw 72.3%).** Our CI runs `llvm-cov export` over ALL
+  test binaries as separate `-object`s, which attributes the internal-linkage
+  `push_residual` and the coroutine/nested-lambda branches to the TU that exercises
+  them — so we land near the origin's *artifact-adjusted* 78.6%, not its raw aggregate.
+  The raw 72.3% was an origin-specific llvm-cov aggregate quirk (the artifact note
+  above), not a real coverage difference.
+- **The seam arms read as COVERED in CI.** The coverage job merges the seam-ON targets
+  too, so F4 / F6 / W-12 / acquire-livelock are exercised and show covered — the
+  seam-OFF "uncovered-but-witnessed" framing below is the origin's pure-seam-OFF lane;
+  for this repo it is *conservative*.
+
+**Uncovered-line audit (CI lcov vs this ledger).** Every uncovered line in the CI report
+maps to a documented entry: the four defensive `terminate()` traps (bucket 2 — the
+null-awaiter trap, the destructor guard, and both chain-walk `granted` traps), **W-6**
+(`store_executor`-fail), **W-9** (`assign()`-throws), and **W-1** (both `lock_drained`
+returns). Two regions read as uncovered only as measurement artifacts: the
+`async_lock(mr)` PMR path (`sync_pmr_fallback` *does* exercise it — coroutine/lambda
+mis-attribution, same class as `push_residual`) and the `#ifdef`-gated
+`test_seam_mutable_slot` accessor (present only because seam-ON binaries are in the
+merge). No uncovered line is a genuine untested error path.
+
 ## Why uncovered ≠ untested — the four buckets
 
 Every uncovered line/branch falls into exactly one of these:
@@ -95,10 +129,10 @@ These live in the source project and are **not** committed there, hence this cop
    `project_async_mutex_cluster4_hardening.md`.
 2. **Authoritative verify record (full per-waiver reasoning)** — the § *Step 4 Coverage
    gate* + § *Waivers* sections of
-   `research/G19-fix-fpml-iso20022/library/.specify/decisions/058-async-mutex-hardening-verify.md`.
+   `fixpp/.specify/decisions/058-async-mutex-hardening-verify.md`.
 3. **Coverage-design origin (W-1…W-11 + F4/F6/F7, incl. the empirical-correction
    section)** —
-   `research/G19-fix-fpml-iso20022/library/.specify/decisions/058-async-mutex-hardening-coverage-design.md`.
+   `fixpp/.specify/decisions/058-async-mutex-hardening-coverage-design.md`.
 
 Line-number anchors in the origin records refer to the fixpp header; the code bodies are
 identical here, so map arms by function/branch name rather than absolute line.
